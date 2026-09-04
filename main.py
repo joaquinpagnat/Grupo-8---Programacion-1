@@ -44,7 +44,7 @@ def main():
             
         elif opcion == 3:
             print("\n--- Has elegido Modificar Nota ---")
-            print("(Función en desarrollo...)\n")
+            print("(Función en desarrollo)\n")
             
         elif opcion == 4:
             print("\n--- Has elegido Ver notas ---")
