@@ -54,7 +54,7 @@ def modificar_nota(matriz,estudiantes,materias):
     
     if len(matriz[opcionA-1][opcionM-1]) == 0:
         
-        print("\n--- no hay parcales a modificar ---")
+        print("\n--- no hay parciales a modificar ---")
         
     else:
     
