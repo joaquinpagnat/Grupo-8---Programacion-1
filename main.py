@@ -54,8 +54,4 @@ def main():
             print("\n¡Gracias por usar el sistema!")
 
 main()
-            
-        elif opcion == 5:
-            print("\n¡Gracias por usar el sistema!")
-
-main()
+        
