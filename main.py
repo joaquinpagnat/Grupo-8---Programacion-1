@@ -3,7 +3,7 @@ import Crear_Matriz, Funciones_Reps
 def main():
 
     matriz = []
-    edades = []
+    
 
     # Listas de alumnos y materias
     preAlumnos = [
@@ -44,11 +44,16 @@ def main():
             
         elif opcion == 3:
             print("\n--- Has elegido Modificar Nota ---")
-            print("(Función en desarrollo)\n")
+            Crear_Matriz.modificar_nota(matriz,preAlumnos,preMaterias)
             
         elif opcion == 4:
             print("\n--- Has elegido Ver notas ---")
-            print("(Función en desarrollo)\n")
+            Crear_Matriz.mostrar_notas_alumno(matriz,preAlumnos, preMaterias)
+            
+        elif opcion == 5:
+            print("\n¡Gracias por usar el sistema!")
+
+main()
             
         elif opcion == 5:
             print("\n¡Gracias por usar el sistema!")
