@@ -19,3 +19,15 @@ def validar_nota(minimo,maximo):
         nota = nota = int(input(f"ingresa una nota entre {minimo} y {maximo}: "))
 
     return nota
+
+def mostrar_alumnos(estudiantes):
+
+    for i in range(len(estudiantes)):
+        print(f"{i+1} = {estudiantes[i]}")
+    print()
+
+def mostrar_materias(materias):
+    for i in range(len(materias)):
+        print(f"{i+1} = {materias[i]}")
+    print()
+    
