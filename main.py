@@ -5,7 +5,6 @@ def main():
     matriz = []
     
 
-    # Listas de alumnos y materias
     preAlumnos = [
         "Matias Lopez", "Carlos Gomez", "Daniela Fernandez", "Juan Perez", 
         "Sofia Rodriguez", "Lucia Gonzalez", "Pedro Martinez", "Florencia Sanchez", 
@@ -28,7 +27,7 @@ def main():
     opcion = 0
 
     
-    while opcion != 5:
+    while opcion != 6:
         
         opcion = Crear_Matriz.menu()
 
@@ -51,7 +50,13 @@ def main():
             Crear_Matriz.mostrar_notas_alumno(matriz,preAlumnos, preMaterias)
             
         elif opcion == 5:
-            print("\n¡Gracias por usar el sistema!")
+            print("\n--- Has elegido Eliminar Alumno ---")
+            Crear_Matriz.eliminar_alumno(preAlumnos, preMaterias, matriz)
+
+        elif opcion == 6:
+            print("\n --- Has elegido salir---")
+
+        
 
 main()
         
