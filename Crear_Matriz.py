@@ -2,14 +2,17 @@ import Funciones_Reps
 
 def menu():
     print("Bienvenido al sistema de gestion de notas.")
+    print("-"*40)
     print("1 - Alta de alumno")
     print("2 - Agregar Nota")
     print("3 - Modificar Nota")
     print("4 - Ver notas de un alumno")
-    print("5 - Salir")
+    print("5 - Eliminar Alumno")
+    print("6 - Salir")
+    print("-"*40)
 
 
-    opcion = Funciones_Reps.validar_opcion("elija una opcion: ", 1, 5)
+    opcion = Funciones_Reps.validar_opcion("Elija una opcion: ", 1, 6)
     return opcion
 
 
@@ -83,6 +86,10 @@ def mostrar_notas_alumno(matriz,estudiantes, materias):
 def agregar_persona(preAlumnos, preMaterias, matriz):
 
     nombre = input("Ingrese el nombre y apellido del alumno: ").title()
+    while nombre.isalpha() == False:
+            print("Ingrese un nombre valido.")
+            nombre = input("Ingrese el nombre y apellido del alumno: ").title()
+
     preAlumnos.append(nombre)
     nueva_fila = []
     for c in range(len(preMaterias)):
@@ -91,11 +98,27 @@ def agregar_persona(preAlumnos, preMaterias, matriz):
     
     print(f"\n¡{nombre} se dio de alta correctamente!")
 
+    return nombre
+
+
+
+def eliminar_alumno(preAlumnos, matriz, preMaterias):
+    Funciones_Reps.mostrar_alumnos(preAlumnos)
+
+    opcionA = Funciones_Reps.validar_opcion("Seleccione un alumno:", 1, len(preAlumnos))
+
+    posicion = opcionA - 1
+    alumno = preAlumnos[posicion]
+
+    preAlumnos.pop(posicion)
+    preMaterias.pop(posicion)
+    matriz.pop(posicion)
+
+    print(f"{alumno} fue eliminado correctamente.")
 
 
 
 
 
-def validar_nombre_persona(preAlumnos, preMaterias, Matriz):
-    pass
 
+    
