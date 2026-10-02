@@ -1,62 +1,49 @@
-import Crear_Matriz, Funciones_Reps
+"""Ejecutar con: python main.py (Python 3.9 o posterior)."""
 
-def main():
+from copy import deepcopy
+from pathlib import Path
 
-    matriz = []
-    
-
-    preAlumnos = [
-        "Matias Lopez", "Carlos Gomez", "Daniela Fernandez", "Juan Perez", 
-        "Sofia Rodriguez", "Lucia Gonzalez", "Pedro Martinez", "Florencia Sanchez", 
-        "Valentina Romero", "Diego Diaz", "Martina Alvarez", "Alejandro Ruiz", 
-        "Camila Alonso", "Gabriel Torres", "Julieta Silva"
-    ]
-    
-    preMaterias = [
-        "Matematica", "Literatura", "Electrotecnia", "Ingles", 
-        "Fisica", "Quimica", "Historia", "Geografia", 
-        "Biologia", "Informatica", "Educacion Fisica"
-    ]
-
-    filas = len(preAlumnos)
-    columnas = len(preMaterias)
-    
-    Crear_Matriz.crear_matriz(filas, columnas, matriz)
+import Crear_Matriz
+import Funciones_Reps
+import gestion
 
 
-    opcion = 0
+RUTA_DATOS = Path(__file__).resolve().with_name("datos.json")
 
-    
-    while opcion != 6:
-        
-        opcion = Crear_Matriz.menu()
 
-        if opcion == 1:
-            print("\n--- Has elegido Alta de alumno ---")
-            Crear_Matriz.agregar_persona(preAlumnos, preMaterias, matriz)
-            
-            
-        elif opcion == 2:
-            print("\n--- Has elegido Agregar Nota ---")
-            Crear_Matriz.agregar_notas(preAlumnos, preMaterias, matriz)
-            print("¡Nota agregada con éxito!\n")
-            
-        elif opcion == 3:
-            print("\n--- Has elegido Modificar Nota ---")
-            Crear_Matriz.modificar_nota(matriz,preAlumnos,preMaterias)
-            
-        elif opcion == 4:
-            print("\n--- Has elegido Ver notas ---")
-            Crear_Matriz.mostrar_notas_alumno(matriz,preAlumnos, preMaterias)
-            
-        elif opcion == 5:
-            print("\n--- Has elegido Eliminar Alumno ---")
-            Crear_Matriz.eliminar_alumno(preAlumnos, preMaterias, matriz)
+def main(ruta_datos=RUTA_DATOS):
+    try:
+        datos = gestion.cargar_datos(ruta_datos)
+    except (OSError, ValueError) as error:
+        print(f"No se pudo abrir el sistema: {error}")
+        print("El archivo original se conserva. Revisalo o restaurá una copia antes de volver a iniciar.")
+        return 1
 
-        elif opcion == 6:
-            print("\n --- Has elegido salir---")
+    print("Cada cambio se guarda automáticamente en datos.json.")
+    while True:
+        try:
+            opcion = Crear_Matriz.menu()
+            if opcion == 12:
+                print("Hasta luego. Los cambios realizados quedaron guardados.")
+                return 0
+            # Trabajamos sobre una copia: cancelar o fallar al guardar no deja cambios a medias.
+            nuevos = deepcopy(datos)
+            hubo_cambios = Crear_Matriz.ACCIONES[opcion](nuevos)
+            if hubo_cambios:
+                gestion.guardar_datos(nuevos, ruta_datos)
+                datos = nuevos
+                print("Operación realizada. Cambios guardados correctamente.")
+        except Funciones_Reps.CancelarOperacion:
+            print("Operación cancelada. No se aplicaron cambios.")
+        except ValueError as error:
+            print(f"No se aplicaron cambios: {error}")
+        except OSError as error:
+            print(f"No se pudo guardar: {error}. No se aplicaron los cambios de esta operación.")
+        except (EOFError, KeyboardInterrupt):
+            print("\nPrograma cerrado. Se conservaron las operaciones ya guardadas.")
+            return 0
 
-        
 
-main()
-        
+if __name__ == "__main__":
+    raise SystemExit(main())
+
