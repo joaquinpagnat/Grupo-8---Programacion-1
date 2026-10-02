@@ -21,4 +21,3 @@ echo No se encontro Python. Instala Python 3.9 o posterior y volve a abrir este 
 echo.
 pause
 endlocal
-

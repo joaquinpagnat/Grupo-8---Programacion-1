@@ -1,58 +1,50 @@
-"""Lectura de datos y menús con validación de entradas."""
+"""Entrada por teclado y opciones; funciones y excepciones de las clases 02 y 08."""
 
 import gestion
 
 
-class CancelarOperacion(Exception):
-    """Se vuelve al menú sin aplicar cambios incompletos."""
-
-
 def leer(mensaje):
     texto = input(mensaje).strip()
-    if texto.casefold() == "/cancelar":
-        raise CancelarOperacion
+    if texto.lower() == "/cancelar":
+        raise KeyboardInterrupt
     return texto
 
 
 def validar_opcion(mensaje, minimo, maximo):
-    if minimo > maximo:
-        raise ValueError("No hay opciones disponibles.")
     while True:
         try:
-            opcion = int(leer(mensaje))
+            numero = int(leer(mensaje))
+            if minimo <= numero <= maximo:
+                break
+            print(f"Elegí un número entre {minimo} y {maximo}.")
         except ValueError:
             print("Ingresá un número entero.")
-            continue
-        if minimo <= opcion <= maximo:
-            return opcion
-        print(f"Elegí una opción entre {minimo} y {maximo}.")
+    return numero
 
 
 def elegir(opciones, mensaje="Elegí una opción: "):
-    if not opciones:
-        print("No hay opciones disponibles.")
-        return None
-    for numero, opcion in enumerate(opciones, 1):
-        print(f"{numero} - {opcion}")
+    for i in range(len(opciones)):
+        print(f"{i + 1} - {opciones[i]}")
     print("0 - Volver")
     numero = validar_opcion(mensaje, 0, len(opciones))
-    return numero - 1 if numero else None
+    indice = numero - 1 if numero != 0 else None
+    return indice
 
 
-def validar_nota():
+def leer_nota():
     while True:
         try:
-            return gestion.validar_nota(leer("Nota entre 1 y 10 (se aceptan decimales): "))
+            nota = gestion.validar_nota(leer("Nota entre 1 y 10 (admite coma o punto decimal): "))
+            break
         except ValueError as error:
             print(error)
+    return nota
 
 
 def confirmar(mensaje):
     while True:
-        respuesta = leer(f"{mensaje} (s/n): ").casefold()
-        if respuesta in ("s", "si", "sí"):
-            return True
-        if respuesta in ("n", "no", ""):
-            return False
+        texto = leer(mensaje + " (s/n): ").lower()
+        if texto in ("s", "si", "sí", "n", "no", ""):
+            break
         print("Respondé s o n.")
-
+    return texto in ("s", "si", "sí")

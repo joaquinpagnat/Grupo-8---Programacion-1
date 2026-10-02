@@ -1,6 +1,10 @@
 datos.json
-*.tmp
+alumnos.txt
+materias.txt
+cursadas.txt
+*.bak
+*.nuevo
+prueba_*.txt
 __pycache__/
 *.py[cod]
 .venv/
-

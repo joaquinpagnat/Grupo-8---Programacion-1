@@ -1,227 +1,328 @@
-"""Interfaz de consola. Se conserva el nombre del módulo del proyecto original.
+"""Menús del proyecto. Se conserva el nombre original del archivo."""
 
-Los datos ahora se relacionan mediante diccionarios, en lugar de índices de una
-matriz: eliminar un alumno no cambia las materias ni las notas de los demás.
-"""
-
-from datetime import date
-
-import Funciones_Reps as entrada
+import archivos
 import gestion
+import Funciones_Reps as entrada
 
 
 def menu():
+    opciones = (
+        "Alta de alumno", "Agregar nota", "Modificar nota", "Ver notas de un alumno",
+        "Eliminar alumno", "Modificar datos de un alumno", "Buscar alumno y ver su ficha",
+        "Inscribir alumno en una materia", "Quitar inscripción sin notas",
+        "Agregar materia al catálogo", "Listar alumnos", "Salir",
+    )
     print("\nGESTIÓN DE ALUMNOS Y NOTAS")
-    print("-" * 50)
-    print("1 - Alta de alumno")
-    print("2 - Agregar nota")
-    print("3 - Modificar nota")
-    print("4 - Ver notas de un alumno")
-    print("5 - Eliminar alumno")
-    print("6 - Modificar datos de un alumno")
-    print("7 - Buscar alumno y ver su ficha")
-    print("8 - Inscribir alumno en una materia")
-    print("9 - Quitar inscripción sin notas")
-    print("10 - Agregar materia al catálogo")
-    print("11 - Listar alumnos")
-    print("12 - Salir")
-    print("-" * 50)
-    print("Podés escribir /cancelar para volver al menú.")
-    return entrada.validar_opcion("Elegí una opción: ", 1, 12)
+    print("-" * 55)
+    for i in range(len(opciones)):
+        print(f"{i + 1} - {opciones[i]}")
+    print("-" * 55)
+    print("/cancelar o Ctrl+C vuelve al menú durante una operación.")
+    return entrada.validar_opcion("Elegí una opción: ", 1, len(opciones))
 
 
-def etiqueta_alumno(legajo, alumno):
-    return f"Legajo {legajo} | {alumno['apellido']}, {alumno['nombre']} | DNI {alumno['dni']}"
+def etiqueta_alumno(ficha):
+    return f"Legajo {ficha['legajo']} | {ficha['apellido']}, {ficha['nombre']} | DNI {ficha['dni']}"
 
 
-def seleccionar_alumno(datos):
-    if not datos["alumnos"]:
-        print("No hay alumnos cargados. Primero usá Alta de alumno.")
-        return None
-    while True:
-        consulta = entrada.leer("Buscar por nombre, apellido, DNI completo o #legajo (Enter para volver): ")
-        if not consulta:
-            return None
-        resultados = gestion.buscar_alumnos(datos, consulta)
-        if not resultados:
-            print("No se encontraron alumnos. Probá otra búsqueda.")
-            continue
-        indice = entrada.elegir([etiqueta_alumno(codigo, alumno) for codigo, alumno in resultados],
-                                "Seleccioná un resultado: ")
-        return resultados[indice][0] if indice is not None else None
+def seleccionar_alumno(config):
+    """Muestra coincidencias y pide un legajo, sin guardar el padrón en una lista."""
+    seleccionado = None
+    archivo = None
+    try:
+        archivo = open(config["alumnos"], "rt", encoding="utf-8")
+        hay_alumnos = False
+        for linea in archivo:
+            if archivos.separar(linea, 7)[1] == "1":
+                hay_alumnos = True
+        if not hay_alumnos:
+            print("No hay alumnos cargados. Primero usá Alta de alumno.")
+        while hay_alumnos:
+            consulta = entrada.leer("Buscar por nombre, apellido, DNI o #legajo (Enter para volver): ")
+            if consulta == "":
+                break
+            coincidencias = 0
+            archivo.seek(0)
+            for linea in archivo:
+                ficha = gestion.ficha_desde_fila(archivos.separar(linea, 7))
+                if gestion.coincide_alumno(ficha, consulta):
+                    print(etiqueta_alumno(ficha))
+                    coincidencias += 1
+            if coincidencias == 0:
+                print("No se encontraron alumnos. Probá otra búsqueda.")
+            else:
+                legajo = entrada.leer("Escribí el legajo de un resultado (Enter para volver): ")
+                if legajo == "":
+                    break
+                fila = archivos.buscar_en_archivo(archivo, 7, (0,), (legajo,))
+                if fila is not None and gestion.coincide_alumno(gestion.ficha_desde_fila(fila), consulta):
+                    seleccionado = legajo
+                    break
+                print("Ese legajo no pertenece a los resultados mostrados.")
+    finally:
+        if archivo is not None:
+            archivo.close()
+    return seleccionado
 
 
 def leer_ficha(actual=None):
     ficha = {}
     campos = (("nombre", "Nombre"), ("apellido", "Apellido"), ("dni", "DNI"),
-              ("email", "Correo electrónico (opcional)"), ("telefono", "Teléfono (opcional)"))
+              ("email", "Correo (opcional)"), ("telefono", "Teléfono (opcional)"))
     if actual is not None:
-        print("Enter conserva el dato actual. Un guion borra el correo o el teléfono.")
+        print("Enter conserva un dato. Un guion borra el correo o el teléfono.")
     for clave, titulo in campos:
-        anterior = actual[clave] if actual is not None else ""
-        mensaje = f"{titulo} (actual: {anterior or 'Sin informar'}): " if actual is not None else f"{titulo}: "
+        mensaje = titulo + ": "
+        if actual is not None:
+            mensaje = titulo + " (actual: " + (actual[clave] or "Sin informar") + "): "
         valor = entrada.leer(mensaje)
-        if actual is not None and not valor:
-            valor = anterior
+        if actual is not None and valor == "":
+            valor = actual[clave]
         if clave in ("email", "telefono") and valor == "-":
             valor = ""
         ficha[clave] = valor
     return ficha
 
 
-def agregar_persona(datos):
+def agregar_persona(config):
     ficha = leer_ficha()
-    legajo = gestion.alta_alumno(datos, **ficha)
-    print(f"Legajo asignado: {legajo}. Para asignar materias usá la opción 8.")
+    legajo = gestion.alta_alumno(config, ficha["nombre"], ficha["apellido"], ficha["dni"],
+                                ficha["email"], ficha["telefono"])
+    print(f"Legajo asignado: {legajo}. Asigná las materias con la opción 8.")
     return True
 
 
-def modificar_persona(datos):
-    legajo = seleccionar_alumno(datos)
-    if legajo is None:
-        return False
-    ficha = leer_ficha(datos["alumnos"][legajo])
-    gestion.modificar_alumno(datos, legajo, **ficha)
-    return True
-
-
-def eliminar_alumno(datos):
-    legajo = seleccionar_alumno(datos)
-    if legajo is None:
-        return False
-    alumno = datos["alumnos"][legajo]
-    cantidad = sum(len(i["notas"]) for i in alumno["inscripciones"])
-    print(etiqueta_alumno(legajo, alumno))
-    print(f"Se eliminarán su ficha, {len(alumno['inscripciones'])} inscripciones y {cantidad} notas.")
-    if not entrada.confirmar("¿Confirmás la eliminación?"):
-        print("Eliminación cancelada.")
-        return False
-    gestion.eliminar_alumno(datos, legajo)
-    return True
-
-
-def seleccionar_materia(datos):
-    materias = sorted(datos["materias"].items(), key=lambda par: gestion.normalizar(par[1]))
-    indice = entrada.elegir([nombre for codigo, nombre in materias], "Elegí una materia: ")
-    return materias[indice][0] if indice is not None else None
-
-
-def leer_anio():
-    while True:
-        texto = entrada.leer(f"Año de cursada (Enter = {date.today().year}): ")
-        try:
-            anio = int(texto) if texto else date.today().year
-            gestion.validar_periodo(anio, gestion.PERIODOS[0])
-            return anio
-        except ValueError:
-            print("Ingresá un año entre 1900 y 2100.")
-
-
-def inscribir_alumno(datos):
-    legajo = seleccionar_alumno(datos)
-    if legajo is None:
-        return False
-    materia = seleccionar_materia(datos)
-    if materia is None:
-        return False
-    anio = leer_anio()
-    indice = entrada.elegir(gestion.PERIODOS, "Elegí el período de cursada: ")
-    if indice is None:
-        return False
-    gestion.inscribir(datos, legajo, materia, anio, gestion.PERIODOS[indice])
-    return True
-
-
-def seleccionar_inscripcion(datos, legajo):
-    inscripciones = datos["alumnos"][legajo]["inscripciones"]
-    if not inscripciones:
-        print("El alumno no tiene materias asignadas. Inscribilo con la opción 8.")
-        return None
-    ordenadas = sorted(inscripciones, key=lambda i: (
-        i["anio"], gestion.PERIODOS.index(i["periodo"]), datos["materias"][i["materia"]]))
-    opciones = [f"{datos['materias'][i['materia']]} | {i['anio']} | {i['periodo']}" for i in ordenadas]
-    indice = entrada.elegir(opciones, "Elegí la materia y su período: ")
-    return ordenadas[indice] if indice is not None else None
-
-
-def quitar_materia(datos):
-    legajo = seleccionar_alumno(datos)
-    if legajo is None:
-        return False
-    inscripcion = seleccionar_inscripcion(datos, legajo)
-    if inscripcion is None:
-        return False
-    if inscripcion["notas"]:
-        print("No se puede quitar una inscripción que ya tiene notas.")
-        return False
-    if not entrada.confirmar("¿Quitás esta inscripción?"):
-        return False
-    gestion.quitar_inscripcion(datos, legajo, inscripcion["materia"], inscripcion["anio"], inscripcion["periodo"])
-    return True
-
-
-def editar_nota(datos, modificar=False):
-    legajo = seleccionar_alumno(datos)
-    if legajo is None:
-        return False
-    inscripcion = seleccionar_inscripcion(datos, legajo)
-    if inscripcion is None:
-        return False
-    print("Se permite una nota para Parcial 1, una para Parcial 2 y una para Final.")
-    disponibles = [e for e in gestion.EVALUACIONES if (e in inscripcion["notas"]) == modificar]
-    if not disponibles:
-        if modificar:
-            print("Esta materia y período todavía no tienen notas para modificar.")
-        else:
-            print("Ya están cargadas las tres evaluaciones. Usá Modificar nota para corregirlas.")
-        return False
-    if not modificar and inscripcion["notas"]:
-        print("Las evaluaciones ya cargadas se corrigen con Modificar nota.")
-    opciones = [f"{e} (actual: {inscripcion['notas'][e]:g})" if modificar else e for e in disponibles]
-    indice = entrada.elegir(opciones, "Elegí la evaluación: ")
-    if indice is None:
-        return False
-    nota = entrada.validar_nota()
-    gestion.registrar_nota(datos, legajo, inscripcion["materia"], inscripcion["anio"],
-                           inscripcion["periodo"], disponibles[indice], nota, modificar=modificar)
-    return True
-
-
-def agregar_notas(datos):
-    return editar_nota(datos)
-
-
-def modificar_nota(datos):
-    return editar_nota(datos, modificar=True)
-
-
-def mostrar_notas_alumno(datos):
-    legajo = seleccionar_alumno(datos)
+def modificar_persona(config):
+    cambiado = False
+    legajo = seleccionar_alumno(config)
     if legajo is not None:
-        print("\n" + gestion.informe_alumno(datos, legajo))
+        ficha = leer_ficha(gestion.obtener_alumno(config, legajo))
+        gestion.modificar_alumno(config, legajo, ficha["nombre"], ficha["apellido"],
+                                 ficha["dni"], ficha["email"], ficha["telefono"])
+        cambiado = True
+    return cambiado
+
+
+def eliminar_alumno(config):
+    cambiado = False
+    legajo = seleccionar_alumno(config)
+    if legajo is not None:
+        print("El alumno dejará de aparecer en las búsquedas y sus notas quedarán fuera del uso normal.")
+        if entrada.confirmar("¿Confirmás la baja de este alumno?"):
+            gestion.eliminar_alumno(config, legajo)
+            cambiado = True
+    return cambiado
+
+
+def seleccionar_materia(config):
+    elegido = None
+    archivo = None
+    try:
+        archivo = open(config["materias"], "rt", encoding="utf-8")
+        print("\nCATÁLOGO DE MATERIAS")
+        for linea in archivo:
+            codigo, nombre = archivos.separar(linea, 2)
+            print(f"{codigo} - {nombre}")
+        while True:
+            codigo = entrada.leer("Código de materia (0 o Enter para volver): ")
+            if codigo in ("0", ""):
+                break
+            fila = archivos.buscar_en_archivo(archivo, 2, (0,), (codigo,))
+            if fila is not None:
+                elegido = codigo
+                break
+            print("No existe una materia con ese código.")
+    finally:
+        if archivo is not None:
+            archivo.close()
+    return elegido
+
+
+def inscribir_alumno(config):
+    cambiado = False
+    legajo = seleccionar_alumno(config)
+    if legajo is not None:
+        materia = seleccionar_materia(config)
+        if materia is not None:
+            anio = entrada.validar_opcion("Año de cursada (por ejemplo 2026): ", 1900, 2100)
+            periodo = entrada.elegir(config["periodos"], "Elegí el período: ")
+            if periodo is not None:
+                gestion.inscribir(config, legajo, materia, anio, config["periodos"][periodo])
+                cambiado = True
+    return cambiado
+
+
+def seleccionar_cursada(config, legajo):
+    seleccionada = None
+    cursadas = None
+    materias = None
+    try:
+        cursadas = open(config["cursadas"], "rt", encoding="utf-8")
+        materias = open(config["materias"], "rt", encoding="utf-8")
+        cantidad = 0
+        for linea in cursadas:
+            fila = archivos.separar(linea, 7)
+            if fila[0] == legajo:
+                materia = archivos.buscar_en_archivo(materias, 2, (0,), (fila[1],))
+                if materia is None:
+                    raise ValueError("Una inscripción hace referencia a una materia inexistente.")
+                cantidad += 1
+                print(f"{cantidad} - {materia[1]} | {fila[2]} | {fila[3]}")
+        if cantidad == 0:
+            print("El alumno no tiene materias asignadas. Usá la opción 8.")
+        else:
+            print("0 - Volver")
+            numero = entrada.validar_opcion("Elegí la materia y su período: ", 0, cantidad)
+            if numero != 0:
+                cursadas.seek(0)
+                contador = 0
+                for linea in cursadas:
+                    fila = archivos.separar(linea, 7)
+                    if fila[0] == legajo:
+                        contador += 1
+                        if contador == numero:
+                            seleccionada = fila
+                            break
+    finally:
+        try:
+            if materias is not None:
+                materias.close()
+        finally:
+            if cursadas is not None:
+                cursadas.close()
+    return seleccionada
+
+
+def quitar_materia(config):
+    cambiado = False
+    legajo = seleccionar_alumno(config)
+    if legajo is not None:
+        fila = seleccionar_cursada(config, legajo)
+        if fila is not None:
+            if fila[4:] != ["", "", ""]:
+                print("No se puede quitar una inscripción que ya tiene notas.")
+            elif entrada.confirmar("¿Quitás esta inscripción?"):
+                gestion.quitar_inscripcion(config, legajo, fila[1], fila[2], fila[3])
+                cambiado = True
+    return cambiado
+
+
+def editar_nota(config, modificar=False):
+    cambiado = False
+    legajo = seleccionar_alumno(config)
+    if legajo is not None:
+        fila = seleccionar_cursada(config, legajo)
+        if fila is not None:
+            notas = gestion.notas_de_cursada(config, fila)
+            disponibles = []
+            etiquetas = []
+            for evaluacion in config["evaluaciones"]:
+                if (evaluacion in notas) == modificar:
+                    disponibles.append(evaluacion)
+                    etiqueta = evaluacion
+                    if modificar:
+                        etiqueta += " (actual: " + gestion.formatear_nota(notas[evaluacion]) + ")"
+                    etiquetas.append(etiqueta)
+            if len(disponibles) == 0:
+                if modificar:
+                    print("Esta cursada todavía no tiene notas para modificar.")
+                else:
+                    print("Ya están cargadas las tres evaluaciones. Usá Modificar nota.")
+            else:
+                print("Se permite una nota para Parcial 1, una para Parcial 2 y una para Final.")
+                if not modificar and len(notas) > 0:
+                    print("Las evaluaciones ya cargadas se corrigen con Modificar nota.")
+                indice = entrada.elegir(etiquetas, "Elegí la evaluación: ")
+                if indice is not None:
+                    nota = entrada.leer_nota()
+                    gestion.registrar_nota(config, legajo, fila[1], fila[2], fila[3],
+                                           disponibles[indice], nota, modificar)
+                    cambiado = True
+    return cambiado
+
+
+def mostrar_notas_alumno(config):
+    legajo = seleccionar_alumno(config)
+    if legajo is not None:
+        ficha = gestion.obtener_alumno(config, legajo)
+        print("\n" + etiqueta_alumno(ficha))
+        print("Correo:", ficha["email"] or "Sin informar")
+        print("Teléfono:", ficha["telefono"] or "Sin informar")
+        cursadas = None
+        materias = None
+        cantidad = 0
+        try:
+            cursadas = open(config["cursadas"], "rt", encoding="utf-8")
+            materias = open(config["materias"], "rt", encoding="utf-8")
+            for linea in cursadas:
+                fila = archivos.separar(linea, 7)
+                if fila[0] == legajo:
+                    cantidad += 1
+                    materia = archivos.buscar_en_archivo(materias, 2, (0,), (fila[1],))
+                    if materia is None:
+                        raise ValueError("Una inscripción tiene una materia inexistente.")
+                    print(f"\n{materia[1]} | {fila[2]} | {fila[3]}")
+                    notas = gestion.notas_de_cursada(config, fila)
+                    if len(notas) == 0:
+                        print("  Sin notas cargadas.")
+                    for evaluacion in config["evaluaciones"]:
+                        if evaluacion in notas:
+                            print("  " + evaluacion + ": " + gestion.formatear_nota(notas[evaluacion]))
+        finally:
+            try:
+                if materias is not None:
+                    materias.close()
+            finally:
+                if cursadas is not None:
+                    cursadas.close()
+        if cantidad == 0:
+            print("Sin materias asignadas. Usá la opción 8 para inscribir al alumno.")
     return False
 
 
-def listar_alumnos(datos):
-    if not datos["alumnos"]:
-        print("No hay alumnos cargados.")
-    for legajo, alumno in sorted(datos["alumnos"].items(), key=lambda par: int(par[0])):
-        print(etiqueta_alumno(legajo, alumno))
+def listar_alumnos(config):
+    archivo = None
+    cantidad = 0
+    try:
+        archivo = open(config["alumnos"], "rt", encoding="utf-8")
+        for linea in archivo:
+            ficha = gestion.ficha_desde_fila(archivos.separar(linea, 7))
+            if ficha["activo"] == "1":
+                print(etiqueta_alumno(ficha))
+                cantidad += 1
+    finally:
+        if archivo is not None:
+            archivo.close()
+    print(f"Total de alumnos activos: {cantidad}.")
     return False
 
 
-def agregar_materia(datos):
-    nombre = entrada.leer("Nombre de la nueva materia: ")
-    gestion.alta_materia(datos, nombre)
-    print("La materia se asigna a cada alumno desde la opción 8.")
+def agregar_materia(config):
+    codigo = gestion.alta_materia(config, entrada.leer("Nombre de la nueva materia: "))
+    print(f"Materia creada con código {codigo}. Asignala desde la opción 8.")
     return True
 
 
-# Diccionario de funciones: relaciona las opciones del menú con sus acciones.
-ACCIONES = {
-    1: agregar_persona, 2: agregar_notas, 3: modificar_nota,
-    4: mostrar_notas_alumno, 5: eliminar_alumno, 6: modificar_persona,
-    7: mostrar_notas_alumno, 8: inscribir_alumno, 9: quitar_materia,
-    10: agregar_materia, 11: listar_alumnos,
-}
-
+def ejecutar_opcion(config, opcion):
+    cambiado = False
+    if opcion == 1:
+        cambiado = agregar_persona(config)
+    elif opcion == 2:
+        cambiado = editar_nota(config)
+    elif opcion == 3:
+        cambiado = editar_nota(config, modificar=True)
+    elif opcion == 4 or opcion == 7:
+        mostrar_notas_alumno(config)
+    elif opcion == 5:
+        cambiado = eliminar_alumno(config)
+    elif opcion == 6:
+        cambiado = modificar_persona(config)
+    elif opcion == 8:
+        cambiado = inscribir_alumno(config)
+    elif opcion == 9:
+        cambiado = quitar_materia(config)
+    elif opcion == 10:
+        cambiado = agregar_materia(config)
+    elif opcion == 11:
+        listar_alumnos(config)
+    return cambiado
