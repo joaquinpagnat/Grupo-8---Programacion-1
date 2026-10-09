@@ -4,12 +4,24 @@ import gestion
 
 # Programa principal: cada opción llama directamente a su función.
 config = gestion.configuracion()
-opcion = 0
+opcion = 12
 try:
     gestion.preparar_archivos(config)
-except (OSError, ValueError) as error:
-    print("No se pudo iniciar:", error)
-    opcion = 12
+    opcion = 0
+except FileNotFoundError as error:
+    print("No se encontró un archivo necesario para iniciar:", error)
+except PermissionError as error:
+    print("No hay permiso para acceder a los archivos:", error)
+except OSError as error:
+    print("No se pudieron preparar los archivos:", error)
+except UnicodeError as error:
+    print("Un archivo contiene texto con una codificación inválida:", error)
+except ValueError as error:
+    print("No se pudo iniciar por un problema con los datos:", error)
+except KeyboardInterrupt:
+    print("\nInicio cancelado.")
+except:
+    print("Ocurrió un error inesperado al iniciar. El programa se cerrará.")
 
 while opcion != 12:
     try:
@@ -41,5 +53,15 @@ while opcion != 12:
     except EOFError:
         print("\nPrograma cerrado.")
         opcion = 12
-    except (ValueError, OSError) as error:
-        print("No se pudo completar la operación:", error)
+    except FileNotFoundError as error:
+        print("No se encontró un archivo necesario:", error)
+    except PermissionError as error:
+        print("No hay permiso para leer o guardar el archivo:", error)
+    except OSError as error:
+        print("Ocurrió un problema al leer o guardar los archivos:", error)
+    except UnicodeError as error:
+        print("Un archivo contiene texto con una codificación inválida:", error)
+    except ValueError as error:
+        print("Los datos no son válidos:", error)
+    except:
+        print("Ocurrió un error inesperado. Volviendo al menú.")

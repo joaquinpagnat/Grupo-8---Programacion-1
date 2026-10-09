@@ -99,3 +99,8 @@ El código entregado no utiliza `assert` ni `finally`. Se simplificaron las
 búsquedas, las validaciones y los parámetros de las funciones de archivos.
 La verificación se realizó por separado: 52 comprobaciones de las reglas,
 recorridos del menú, persistencia, cancelación y cierre de archivos.
+
+El programa principal distingue errores de archivos inexistentes, permisos,
+lectura o escritura, codificación y datos inválidos mediante varios `except`.
+Un `except:` final informa los errores no previstos y vuelve al menú.
+Si el error ocurre durante la preparación inicial, informa el problema y sale.

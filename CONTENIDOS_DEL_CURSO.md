@@ -70,8 +70,15 @@ La función `archivos.cerrar` recibe una lista de archivos abiertos y llama
 a `close()` para cada uno. Si hubo un problema al procesarlos, el bloque
 `except` los cierra y `raise` vuelve a comunicar el error al programa
 principal. Si todo salió bien, se cierran al terminar la operación.
-Los `except` sin tipo se usan únicamente para esa limpieza y siempre
-vuelven a lanzar el error; no lo ocultan.
+En las funciones de archivos, los `except` sin tipo hacen esa limpieza y
+vuelven a lanzar el error para que lo maneje el programa principal.
+
+En `main.py` hay varios `except`: archivo inexistente, falta de permisos,
+otros problemas de lectura o escritura, codificación y datos inválidos.
+Los casos específicos se escriben antes que los generales. Al final hay
+un `except:` que avisa si ocurrió un error no previsto. Si sucede al iniciar,
+el programa se cierra; si sucede durante una operación, vuelve al menú.
+Ctrl+C y el fin de entrada también tienen su propio tratamiento.
 
 La función `ejecutar()` pertenecía al archivo de pruebas retirado. Sus
 comprobaciones se conservaron fuera de la entrega para verificar los cambios.
