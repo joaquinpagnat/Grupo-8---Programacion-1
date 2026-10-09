@@ -50,9 +50,11 @@ def crear_demostracion(config):
         nombre, apellido = nombres[i]
         alumnos.append([legajo, "1", nombre, apellido, str(90000001 + i),
                         "alumno" + legajo + "@example.com", ""])
-        for posicion, desplazamiento in enumerate((0, 3, 6)):
-            materia = str((i + desplazamiento) % len(materias) + 1)
-            periodo = config["periodos"][0] if posicion < 2 else config["periodos"][1]
+        for posicion in range(3):
+            materia = str((i + posicion * 3) % len(materias) + 1)
+            periodo = config["periodos"][0]
+            if posicion == 2:
+                periodo = config["periodos"][1]
             cursadas.append([legajo, materia, str(config["anio_demo"]), periodo, "", "", ""])
     archivos.crear(config["materias"], catalogo)
     archivos.crear(config["alumnos"], alumnos)
@@ -60,16 +62,12 @@ def crear_demostracion(config):
 
 
 def normalizar(texto):
-    """Ignora mayúsculas y tildes con el procedimiento de las clases 05 y 06."""
     con_tilde = "áéíóúü"
     sin_tilde = "aeiouu"
-    resultado = ""
-    for caracter in texto.lower():
-        if caracter in con_tilde:
-            resultado += sin_tilde[con_tilde.index(caracter)]
-        else:
-            resultado += caracter
-    return " ".join(resultado.split())
+    texto = texto.lower()
+    for i in range(len(con_tilde)):
+        texto = texto.replace(con_tilde[i], sin_tilde[i])
+    return " ".join(texto.split())
 
 
 def solo_digitos(texto):
@@ -82,16 +80,11 @@ def solo_digitos(texto):
 
 def validar_nombre(texto, campo):
     texto = " ".join(texto.split())
-    hay_letras = False
-    if len(texto) < 1 or len(texto) > 80:
-        raise ValueError(campo + ": ingresá entre 1 y 80 caracteres.")
-    for caracter in texto:
-        if caracter.isalpha():
-            hay_letras = True
-        elif caracter not in " '-’":
-            raise ValueError(campo + ": usá letras, espacios, apóstrofes o guiones.")
-    if not hay_letras:
-        raise ValueError(campo + ": debe contener letras.")
+    letras = texto
+    for separador in (" ", "'", "-", "’"):
+        letras = letras.replace(separador, "")
+    if not 1 <= len(texto) <= 80 or not letras.isalpha():
+        raise ValueError(campo + ": usá letras, espacios, apóstrofes o guiones (máximo 80 caracteres).")
     return texto
 
 
@@ -113,16 +106,13 @@ def validar_ficha(nombre, apellido, dni, email="", telefono=""):
                 raise ValueError("El correo no puede contener espacios ni punto y coma.")
     telefono = telefono.strip()
     if telefono != "":
-        digitos = 0
-        for i, caracter in enumerate(telefono):
-            if caracter in "0123456789":
-                digitos += 1
-            elif caracter == "+" and i == 0:
-                pass
-            elif caracter not in "() -":
-                raise ValueError("El teléfono contiene un carácter inválido.")
-        if not 6 <= digitos <= 15 or len(telefono) > 25:
-            raise ValueError("El teléfono debe tener entre 6 y 15 dígitos.")
+        digitos = telefono
+        if digitos[0] == "+":
+            digitos = digitos[1:]
+        for separador in ("(", ")", " ", "-"):
+            digitos = digitos.replace(separador, "")
+        if not solo_digitos(digitos) or not 6 <= len(digitos) <= 15 or len(telefono) > 25:
+            raise ValueError("El teléfono debe tener entre 6 y 15 dígitos; admite + al inicio, espacios, guiones y paréntesis.")
     return {"nombre": nombre, "apellido": apellido, "dni": dni,
             "email": email, "telefono": telefono}
 
@@ -138,7 +128,7 @@ def fila_desde_ficha(ficha):
 
 
 def obtener_alumno(config, legajo):
-    fila = archivos.buscar(config["alumnos"], 7, (0,), (str(legajo),))
+    fila = archivos.buscar(config["alumnos"], 7, (str(legajo),))
     if fila is None or fila[1] != "1":
         raise ValueError("No existe un alumno activo con ese legajo.")
     return ficha_desde_fila(fila)
@@ -152,9 +142,10 @@ def verificar_dni(config, dni, excluir=""):
             fila = archivos.separar(linea, 7)
             if fila[1] == "1" and fila[0] != excluir and int(fila[4]) == int(dni):
                 raise ValueError("Ya existe un alumno con ese DNI (legajo " + fila[0] + ").")
-    finally:
-        if archivo is not None:
-            archivo.close()
+    except:
+        archivos.cerrar([archivo])
+        raise
+    archivos.cerrar([archivo])
 
 
 def alta_alumno(config, nombre, apellido, dni, email="", telefono=""):
@@ -162,7 +153,7 @@ def alta_alumno(config, nombre, apellido, dni, email="", telefono=""):
     verificar_dni(config, ficha["dni"])
     ficha["legajo"] = archivos.siguiente_codigo(config["alumnos"], 7)
     ficha["activo"] = "1"
-    archivos.guardar_registro(config["alumnos"], 7, (0,), (ficha["legajo"],), fila_desde_ficha(ficha))
+    archivos.guardar_registro(config["alumnos"], 7, (ficha["legajo"],), fila_desde_ficha(ficha))
     return ficha["legajo"]
 
 
@@ -172,14 +163,14 @@ def modificar_alumno(config, legajo, nombre, apellido, dni, email="", telefono="
     verificar_dni(config, ficha["dni"], anterior["legajo"])
     ficha["legajo"] = anterior["legajo"]
     ficha["activo"] = "1"
-    archivos.guardar_registro(config["alumnos"], 7, (0,), (ficha["legajo"],), fila_desde_ficha(ficha))
+    archivos.guardar_registro(config["alumnos"], 7, (ficha["legajo"],), fila_desde_ficha(ficha))
 
 
 def eliminar_alumno(config, legajo):
     ficha = obtener_alumno(config, legajo)
     ficha["activo"] = "0"
     # Baja lógica: desaparece del uso normal y sus notas quedan inaccesibles.
-    archivos.guardar_registro(config["alumnos"], 7, (0,), (ficha["legajo"],), fila_desde_ficha(ficha))
+    archivos.guardar_registro(config["alumnos"], 7, (ficha["legajo"],), fila_desde_ficha(ficha))
 
 
 def coincide_alumno(ficha, consulta):
@@ -202,7 +193,7 @@ def coincide_alumno(ficha, consulta):
 
 
 def obtener_materia(config, codigo):
-    fila = archivos.buscar(config["materias"], 2, (0,), (str(codigo),))
+    fila = archivos.buscar(config["materias"], 2, (str(codigo),))
     if fila is None:
         raise ValueError("La materia no existe.")
     return fila[1]
@@ -221,11 +212,12 @@ def alta_materia(config, nombre):
             mayor = max(mayor, int(fila[0]))
             if normalizar(fila[1]) == normalizar(nombre):
                 raise ValueError("Ya existe una materia con ese nombre.")
-    finally:
-        if archivo is not None:
-            archivo.close()
+    except:
+        archivos.cerrar([archivo])
+        raise
+    archivos.cerrar([archivo])
     codigo = str(mayor + 1)
-    archivos.guardar_registro(config["materias"], 2, (0,), (codigo,), [codigo, nombre])
+    archivos.guardar_registro(config["materias"], 2, (codigo,), [codigo, nombre])
     return codigo
 
 
@@ -242,7 +234,7 @@ def clave_cursada(config, legajo, materia, anio, periodo):
 def obtener_cursada(config, legajo, materia, anio, periodo):
     obtener_alumno(config, legajo)
     clave = clave_cursada(config, legajo, materia, anio, periodo)
-    fila = archivos.buscar(config["cursadas"], 7, (0, 1, 2, 3), clave)
+    fila = archivos.buscar(config["cursadas"], 7, clave)
     if fila is None:
         raise ValueError("El alumno no está inscripto en esa materia, año y período.")
     return fila
@@ -252,9 +244,9 @@ def inscribir(config, legajo, materia, anio, periodo):
     obtener_alumno(config, legajo)
     obtener_materia(config, materia)
     clave = clave_cursada(config, legajo, materia, anio, periodo)
-    if archivos.buscar(config["cursadas"], 7, (0, 1, 2, 3), clave) is not None:
+    if archivos.buscar(config["cursadas"], 7, clave) is not None:
         raise ValueError("El alumno ya está inscripto en esa materia, año y período.")
-    archivos.guardar_registro(config["cursadas"], 7, (0, 1, 2, 3), clave, list(clave) + ["", "", ""])
+    archivos.guardar_registro(config["cursadas"], 7, clave, list(clave) + ["", "", ""])
 
 
 def quitar_inscripcion(config, legajo, materia, anio, periodo):
@@ -262,7 +254,7 @@ def quitar_inscripcion(config, legajo, materia, anio, periodo):
     if fila[4:] != ["", "", ""]:
         raise ValueError("No se puede quitar una inscripción que ya tiene notas.")
     clave = clave_cursada(config, legajo, materia, anio, periodo)
-    archivos.guardar_registro(config["cursadas"], 7, (0, 1, 2, 3), clave, None)
+    archivos.guardar_registro(config["cursadas"], 7, clave, None)
 
 
 def validar_nota(valor):
@@ -303,4 +295,4 @@ def registrar_nota(config, legajo, materia, anio, periodo, evaluacion, valor, mo
         raise ValueError("No hay una nota cargada para esa evaluación.")
     fila[posicion] = str(validar_nota(valor))
     clave = clave_cursada(config, legajo, materia, anio, periodo)
-    archivos.guardar_registro(config["cursadas"], 7, (0, 1, 2, 3), clave, fila)
+    archivos.guardar_registro(config["cursadas"], 7, clave, fila)

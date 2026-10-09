@@ -1,37 +1,45 @@
-"""Programa principal. Abrir con Iniciar.bat o ejecutar python main.py."""
-
 import Crear_Matriz
 import gestion
 
 
-def main():
-    config = gestion.configuracion()
-    preparado = False
+# Programa principal: cada opción llama directamente a su función.
+config = gestion.configuracion()
+opcion = 0
+try:
+    gestion.preparar_archivos(config)
+except (OSError, ValueError) as error:
+    print("No se pudo iniciar:", error)
+    opcion = 12
+
+while opcion != 12:
     try:
-        gestion.preparar_archivos(config)
-        preparado = True
-    except (OSError, ValueError) as error:
-        print("No se pudo iniciar:", error)
-
-    if preparado:
-        print("Cada cambio se guarda automáticamente en archivos de texto.")
-        print("Si es el primer inicio, se incluyen 15 alumnos y 11 materias de ejemplo.")
-        while True:
-            try:
-                opcion = Crear_Matriz.menu()
-                if opcion == 12:
-                    print("Hasta luego. Los cambios realizados quedaron guardados.")
-                    break
-                if Crear_Matriz.ejecutar_opcion(config, opcion):
-                    print("Operación realizada. Cambios guardados correctamente.")
-            except KeyboardInterrupt:
-                print("\nOperación cancelada. Volviendo al menú.")
-            except EOFError:
-                print("\nPrograma cerrado. Se conservaron las operaciones ya guardadas.")
-                break
-            except (ValueError, OSError, UnicodeError) as error:
-                print("No se pudo completar la operación:", error)
-
-
-# Programa principal (clase 02).
-main()
+        opcion = Crear_Matriz.menu()
+        if opcion == 1:
+            Crear_Matriz.agregar_persona(config)
+        elif opcion == 2:
+            Crear_Matriz.editar_nota(config)
+        elif opcion == 3:
+            Crear_Matriz.editar_nota(config, modificar=True)
+        elif opcion == 4 or opcion == 7:
+            Crear_Matriz.mostrar_notas_alumno(config)
+        elif opcion == 5:
+            Crear_Matriz.eliminar_alumno(config)
+        elif opcion == 6:
+            Crear_Matriz.modificar_persona(config)
+        elif opcion == 8:
+            Crear_Matriz.inscribir_alumno(config)
+        elif opcion == 9:
+            Crear_Matriz.quitar_materia(config)
+        elif opcion == 10:
+            Crear_Matriz.agregar_materia(config)
+        elif opcion == 11:
+            Crear_Matriz.listar_alumnos(config)
+        else:
+            print("Hasta luego. Los cambios realizados quedaron guardados.")
+    except KeyboardInterrupt:
+        print("\nOperación cancelada. Volviendo al menú.")
+    except EOFError:
+        print("\nPrograma cerrado.")
+        opcion = 12
+    except (ValueError, OSError) as error:
+        print("No se pudo completar la operación:", error)

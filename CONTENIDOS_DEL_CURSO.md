@@ -1,69 +1,78 @@
-# Relación con el material de Programación 1
+# Cómo se relaciona el programa con las clases
 
-Se revisaron los **12 PDF proporcionados, con 283 páginas en total**. Algunas
-páginas contienen más de una diapositiva. La tabla utiliza números de página
-del PDF, no números de diapositiva.
+Se tomaron como referencia los 12 PDF aportados por el grupo.
+La restricción del trabajo permite importar random o módulos propios;
+este programa solo necesita módulos propios.
 
-La restricción del grupo es más estricta que los ejemplos de las presentaciones:
-solo se permite importar `random` y módulos propios. Esta versión utiliza
-solamente módulos propios; no necesita azar para funcionar.
+## Recorrido recomendado para explicar el código
 
-| Material revisado | Páginas | Contenido y aplicación |
-| --- | ---: | --- |
-| P1_Clase01 - Introduccion.pdf | 31 | Variables, conversiones, operadores, condiciones, `while`, `for` y `range`. Se usan en el menú y las validaciones. |
-| P1_Clase02 - Funciones.pdf | 23 | Funciones, parámetros, retornos, valores por omisión y módulos. Separación entre interfaz, reglas y archivos. Se mantienen los retornos fuera de los ciclos. |
-| P1_Clase03 - Listas1.pdf | 29 | Listas, índices, `append`, pertenencia y funciones incorporadas. Opciones de evaluación y campos de un registro. `random` está explicado en las páginas 25 a 28, pero no es necesario en este programa. |
-| P1_Clase04 - Listas2 (1).pdf | 26 | Rebanadas, copias, `enumerate`, comprensión y matrices. Se usan rebanadas de un registro y `enumerate` para preparar las inscripciones de ejemplo. |
-| P1_Clase05 - Cadenas1.pdf | 22 | Cadenas, concatenación, recorrido, `split`, `join` y `replace`. El procedimiento de quitar tildes se basa en la página 15; los registros de texto usan las páginas 16 a 18. |
-| P1_Clase06 - Cadenas2.pdf | 21 | `isalpha`, `isdigit`, `isalnum`, mayúsculas/minúsculas, `strip` y f-strings. Validación de nombres, limpieza de entradas y salida legible. |
-| P1_Clase06b - Expresiones Regulares.pdf | 10 | Patrones y módulo `re`. Revisado, pero no se usa `re` por la restricción del grupo; la validación se hace recorriendo cadenas. |
-| P1_Clase07 - TuplasConjuntosDiccionarios.pdf | 29 | Tuplas en las páginas 1 a 8 y diccionarios en las páginas 16 a 27. Se usan en opciones, fichas, notas y claves de inscripciones. No hace falta incorporar conjuntos sin una función concreta. |
-| P1_Clase08 - Excepciones.pdf | 22 | `try`, `except`, `raise`, `finally` y `assert`. Errores de entrada, cancelación, cierre de archivos y comprobaciones del programa. No se definen clases de excepciones propias. |
-| P1_Clase09 - Archivos.pdf | 34 | Texto plano, registros, `open`, escritura, lectura por línea, `seek(0)` y cierre. Las páginas 23 y 33 rechazan cargar archivos completos en memoria; la página 25 explica que CSV no requiere importar un módulo. |
-| P1_Clase09b - JSON.pdf | 9 | JSON y serialización. Revisado, pero no se importa `json`. La página 8 también advierte sobre usar JSON como almacenamiento principal y presenta JSONL. |
-| P1_Clase10 - Recursividad.pdf | 27 | Caso base, caso recursivo, factorial, Fibonacci, listas y Hanoi. Revisado; las operaciones de este programa se resuelven con ciclos y no necesitan recursividad. |
+1. **main.py:** comienza con la configuración y la preparación de archivos.
+   Un `while` repite el menú hasta elegir 12. Cada `if/elif` llama a la
+   función correspondiente. No hay una función intermedia que ejecute opciones.
+2. **Crear_Matriz.py:** pide datos y muestra resultados. Antes de cargar una
+   nota se busca al alumno y se elige una de sus cursadas.
+3. **gestion.py:** valida los datos y aplica las reglas: DNI único, materias
+   individuales, años, períodos y tres evaluaciones.
+4. **archivos.py:** busca o modifica registros recorriendo el archivo línea
+   por línea. Usa `seek(0)` cuando debe volver al principio.
+5. **Funciones_Reps.py:** repite una pregunta cuando la opción o nota
+   ingresada no es válida.
 
-## Tuplas y diccionarios que se pueden mostrar al profesor
+## Contenidos utilizados
 
-En `gestion.configuracion`, el diccionario relaciona nombres con rutas y
-opciones. Los valores `periodos` y `evaluaciones` son tuplas:
+| Presentación | Aplicación |
+| --- | --- |
+| Clase 01 - Introducción | Variables, conversiones, condiciones, ciclos y menú. |
+| Clase 02 - Funciones | Funciones con parámetros, valores de retorno y módulos propios. Los retornos están fuera de los ciclos. |
+| Clase 03 - Listas 1 | Listas de campos de un registro y opciones de evaluación. |
+| Clase 04 - Listas 2 | Índices y rebanadas para separar la clave y las notas de una cursada. |
+| Clase 05 - Cadenas 1 | Recorridos de cadenas, concatenación, split, join y replace. |
+| Clase 06 - Cadenas 2 | Validación con isalpha e isalnum, strip, lower y f-strings. |
+| Clase 06b - Expresiones regulares | No se usa re; las validaciones se resuelven con cadenas. |
+| Clase 07 - Tuplas, conjuntos y diccionarios | Opciones fijas, claves de cursadas, fichas y notas. |
+| Clase 08 - Excepciones | try, except y raise para entradas inválidas y problemas de archivos. |
+| Clase 09 - Archivos | open, close, lectura por línea, write y seek(0). |
+| Clase 09b - JSON | No se importa json; el almacenamiento es texto con separadores. |
+| Clase 10 - Recursividad | Las operaciones se resuelven con ciclos; no necesitan recursividad. |
+
+## Tuplas y diccionarios
+
+Las opciones de evaluación forman una tupla porque son fijas:
 
 ```python
-"periodos": ("1.er cuatrimestre", "2.º cuatrimestre", "Anual")
-"evaluaciones": ("Parcial 1", "Parcial 2", "Final")
+("Parcial 1", "Parcial 2", "Final")
 ```
 
-`gestion.clave_cursada` forma una tupla de cuatro elementos:
+Una cursada se identifica por otra tupla:
 
 ```python
 (legajo, materia, anio, periodo)
 ```
 
-Esta clave evita repetir una inscripción y separa las notas de materias,
-alumnos, años y períodos distintos.
+Así, las notas de una materia no se mezclan con otro alumno, año o período.
 
-`gestion.ficha_desde_fila` convierte los campos de **un registro** en un
-diccionario con nombres claros: `legajo`, `nombre`, `apellido`, `dni`, etc.
-`gestion.notas_de_cursada` hace lo mismo con las tres evaluaciones de una
-cursada. No se guarda el padrón completo en un diccionario.
+La ficha de un alumno es un diccionario con claves como `nombre`,
+`apellido`, `dni`, `email` y `telefono`. Sus notas también se pueden
+representar con un diccionario, por ejemplo:
 
-## Cambios respecto de la primera versión mejorada
+```python
+{"Parcial 1": 8.0, "Parcial 2": 7.0}
+```
 
-- Se eliminaron `json`, `math`, `re`, `unicodedata`, `datetime`, `pathlib`,
-  `copy`, `unittest` y las demás importaciones ajenas al proyecto.
-- Se eliminaron la clase de cancelación, expresiones generadoras y mecanismos
-  de pruebas con bibliotecas. Las pruebas entregadas usan `assert`.
-- Se conservan el alta, la modificación y la búsqueda de alumnos, el control
-  de duplicados, las materias individuales, los años y períodos y las tres
-  evaluaciones elegidas por el grupo.
-- El guardado procesa archivos de texto una línea por vez. Los campos de un
-  registro se separan con `split`; no se utiliza `eval`, `exec`, importación
-  dinámica ni un lector JSON oculto.
-- La baja lógica se guarda cambiando el campo `activo` de `1` a `0` y evita
-  reutilizar legajos. Las notas de alumnos dados de baja no son accesibles
-  desde el programa.
-- Los ejemplos tienen año fijo 2026. Para una inscripción nueva el usuario
-  ingresa el año desde el menú, sin recurrir a `datetime`.
+Se conserva solo el registro que se está usando, no el padrón completo.
 
-La guía relaciona las decisiones con el contenido revisado; la evaluación
-final del trabajo corresponde al profesor.
+## Cierre de archivos y simplificaciones
+
+Aunque los PDF explican `assert` y `finally`, se retiraron por pedido del
+grupo. No se reemplazaron por clases, decoradores ni bibliotecas.
+
+La función `archivos.cerrar` recibe una lista de archivos abiertos y llama
+a `close()` para cada uno. Si hubo un problema al procesarlos, el bloque
+`except` los cierra y `raise` vuelve a comunicar el error al programa
+principal. Si todo salió bien, se cierran al terminar la operación.
+Los `except` sin tipo se usan únicamente para esa limpieza y siempre
+vuelven a lanzar el error; no lo ocultan.
+
+La función `ejecutar()` pertenecía al archivo de pruebas retirado. Sus
+comprobaciones se conservaron fuera de la entrega para verificar los cambios.
+El programa se inicia leyendo `main.py`.

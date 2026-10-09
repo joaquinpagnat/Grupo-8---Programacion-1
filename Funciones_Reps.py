@@ -27,7 +27,9 @@ def elegir(opciones, mensaje="Elegí una opción: "):
         print(f"{i + 1} - {opciones[i]}")
     print("0 - Volver")
     numero = validar_opcion(mensaje, 0, len(opciones))
-    indice = numero - 1 if numero != 0 else None
+    indice = None
+    if numero != 0:
+        indice = numero - 1
     return indice
 
 

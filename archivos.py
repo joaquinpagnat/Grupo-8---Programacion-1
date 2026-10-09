@@ -1,16 +1,26 @@
-"""Archivos de texto procesados registro por registro (clase 09)."""
+"""Lectura y escritura de archivos de texto, un registro por vez."""
+
+
+def cerrar(abiertos):
+    # Intenta cerrar todos los archivos, incluso si uno no puede cerrarse.
+    error = None
+    for archivo in abiertos:
+        if archivo is not None:
+            try:
+                archivo.close()
+            except OSError as problema:
+                error = problema
+    if error is not None:
+        raise error
 
 
 def existe(ruta):
     encontrado = True
-    archivo = None
     try:
         archivo = open(ruta, "rt", encoding="utf-8")
+        archivo.close()
     except FileNotFoundError:
         encontrado = False
-    finally:
-        if archivo is not None:
-            archivo.close()
     return encontrado
 
 
@@ -26,39 +36,33 @@ def formar_linea(campos):
     for campo in campos:
         texto = str(campo)
         if ";" in texto or "\n" in texto or "\r" in texto:
-            raise ValueError("Los campos no pueden contener punto y coma ni saltos de línea.")
+            raise ValueError("Los datos no pueden contener punto y coma ni saltos de línea.")
         textos.append(texto)
     return ";".join(textos) + "\n"
 
 
-def obtener_clave(campos, posiciones):
-    valores = []
-    for posicion in posiciones:
-        valores.append(campos[posicion])
-    return tuple(valores)
-
-
-def buscar_en_archivo(archivo, cantidad, posiciones, clave):
-    """Busca una fila sin almacenar el archivo completo."""
+def buscar_en_archivo(archivo, cantidad, clave):
+    # La clave ocupa los primeros campos: el código o los 4 datos de la cursada.
     archivo.seek(0)
     resultado = None
     for linea in archivo:
         campos = separar(linea, cantidad)
-        if obtener_clave(campos, posiciones) == clave:
+        if tuple(campos[:len(clave)]) == clave:
             if resultado is not None:
                 raise ValueError("El archivo contiene un identificador duplicado.")
             resultado = campos
     return resultado
 
 
-def buscar(ruta, cantidad, posiciones, clave):
+def buscar(ruta, cantidad, clave):
     archivo = None
     try:
         archivo = open(ruta, "rt", encoding="utf-8")
-        resultado = buscar_en_archivo(archivo, cantidad, posiciones, clave)
-    finally:
-        if archivo is not None:
-            archivo.close()
+        resultado = buscar_en_archivo(archivo, cantidad, clave)
+    except:
+        cerrar([archivo])
+        raise
+    cerrar([archivo])
     return resultado
 
 
@@ -70,14 +74,14 @@ def siguiente_codigo(ruta, cantidad):
         for linea in archivo:
             campos = separar(linea, cantidad)
             mayor = max(mayor, int(campos[0]))
-    finally:
-        if archivo is not None:
-            archivo.close()
+    except:
+        cerrar([archivo])
+        raise
+    cerrar([archivo])
     return str(mayor + 1)
 
 
 def copiar(origen, destino):
-    """Copia un archivo de texto leyendo y escribiendo una línea por vez."""
     entrada = None
     salida = None
     try:
@@ -85,20 +89,14 @@ def copiar(origen, destino):
         salida = open(destino, "wt", encoding="utf-8")
         for linea in entrada:
             salida.write(linea)
-    finally:
-        try:
-            if salida is not None:
-                salida.close()
-        finally:
-            if entrada is not None:
-                entrada.close()
+    except:
+        cerrar([entrada, salida])
+        raise
+    cerrar([entrada, salida])
 
 
-def guardar_registro(ruta, cantidad, posiciones, clave, nuevo):
-    """Agrega, reemplaza o quita una fila; conserva la versión previa en .bak."""
-    linea_nueva = ""
-    if nuevo is not None:
-        linea_nueva = formar_linea(nuevo)
+def guardar_registro(ruta, cantidad, clave, nuevo):
+    """Agrega o reemplaza un registro. Si nuevo es None, lo quita."""
     entrada = None
     salida = None
     encontrado = False
@@ -107,45 +105,39 @@ def guardar_registro(ruta, cantidad, posiciones, clave, nuevo):
         salida = open(ruta + ".nuevo", "wt", encoding="utf-8")
         for linea in entrada:
             campos = separar(linea, cantidad)
-            if obtener_clave(campos, posiciones) == clave:
+            if tuple(campos[:len(clave)]) == clave:
                 if encontrado:
                     raise ValueError("El archivo contiene un identificador duplicado.")
                 encontrado = True
                 if nuevo is not None:
-                    salida.write(linea_nueva)
+                    salida.write(formar_linea(nuevo))
             else:
                 salida.write(linea)
         if not encontrado:
             if nuevo is None:
                 raise ValueError("No existe el registro que se quiere quitar.")
-            salida.write(linea_nueva)
-    finally:
-        try:
-            if salida is not None:
-                salida.close()
-        finally:
-            if entrada is not None:
-                entrada.close()
+            salida.write(formar_linea(nuevo))
+    except:
+        cerrar([entrada, salida])
+        raise
+    cerrar([entrada, salida])
 
-    # Primero se termina la nueva versión; después se conserva la anterior.
+    # Se conserva la versión anterior antes de reemplazar el archivo.
     copiar(ruta, ruta + ".bak")
     try:
         copiar(ruta + ".nuevo", ruta)
     except (OSError, KeyboardInterrupt):
-        try:
-            copiar(ruta + ".bak", ruta)
-        except OSError:
-            raise OSError("No se pudo restaurar el archivo. Conservá su copia .bak.")
+        copiar(ruta + ".bak", ruta)
         raise
 
 
 def crear(ruta, registros):
-    """Escribe los ejemplos definidos en el código, sin leer otros archivos."""
     archivo = None
     try:
         archivo = open(ruta, "wt", encoding="utf-8")
         for registro in registros:
             archivo.write(formar_linea(registro))
-    finally:
-        if archivo is not None:
-            archivo.close()
+    except:
+        cerrar([archivo])
+        raise
+    cerrar([archivo])

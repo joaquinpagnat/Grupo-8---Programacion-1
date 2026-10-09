@@ -26,42 +26,32 @@ def etiqueta_alumno(ficha):
 
 
 def seleccionar_alumno(config):
-    """Muestra coincidencias y pide un legajo, sin guardar el padrón en una lista."""
+    consulta = entrada.leer("Buscar por nombre, apellido, DNI o #legajo (Enter para volver): ")
     seleccionado = None
     archivo = None
-    try:
-        archivo = open(config["alumnos"], "rt", encoding="utf-8")
-        hay_alumnos = False
-        for linea in archivo:
-            if archivos.separar(linea, 7)[1] == "1":
-                hay_alumnos = True
-        if not hay_alumnos:
-            print("No hay alumnos cargados. Primero usá Alta de alumno.")
-        while hay_alumnos:
-            consulta = entrada.leer("Buscar por nombre, apellido, DNI o #legajo (Enter para volver): ")
-            if consulta == "":
-                break
-            coincidencias = 0
-            archivo.seek(0)
+    if consulta != "":
+        try:
+            archivo = open(config["alumnos"], "rt", encoding="utf-8")
+            cantidad = 0
             for linea in archivo:
                 ficha = gestion.ficha_desde_fila(archivos.separar(linea, 7))
                 if gestion.coincide_alumno(ficha, consulta):
                     print(etiqueta_alumno(ficha))
-                    coincidencias += 1
-            if coincidencias == 0:
-                print("No se encontraron alumnos. Probá otra búsqueda.")
+                    cantidad += 1
+            if cantidad == 0:
+                print("No se encontraron alumnos. Podés volver a buscar desde el menú.")
             else:
                 legajo = entrada.leer("Escribí el legajo de un resultado (Enter para volver): ")
-                if legajo == "":
-                    break
-                fila = archivos.buscar_en_archivo(archivo, 7, (0,), (legajo,))
-                if fila is not None and gestion.coincide_alumno(gestion.ficha_desde_fila(fila), consulta):
-                    seleccionado = legajo
-                    break
-                print("Ese legajo no pertenece a los resultados mostrados.")
-    finally:
-        if archivo is not None:
-            archivo.close()
+                if legajo != "":
+                    fila = archivos.buscar_en_archivo(archivo, 7, (legajo,))
+                    if fila is not None and gestion.coincide_alumno(gestion.ficha_desde_fila(fila), consulta):
+                        seleccionado = legajo
+                    else:
+                        print("Ese legajo no pertenece a los resultados mostrados.")
+        except:
+            archivos.cerrar([archivo])
+            raise
+        archivos.cerrar([archivo])
     return seleccionado
 
 
@@ -89,29 +79,24 @@ def agregar_persona(config):
     legajo = gestion.alta_alumno(config, ficha["nombre"], ficha["apellido"], ficha["dni"],
                                 ficha["email"], ficha["telefono"])
     print(f"Legajo asignado: {legajo}. Asigná las materias con la opción 8.")
-    return True
 
 
 def modificar_persona(config):
-    cambiado = False
     legajo = seleccionar_alumno(config)
     if legajo is not None:
         ficha = leer_ficha(gestion.obtener_alumno(config, legajo))
         gestion.modificar_alumno(config, legajo, ficha["nombre"], ficha["apellido"],
                                  ficha["dni"], ficha["email"], ficha["telefono"])
-        cambiado = True
-    return cambiado
+        print("Cambios guardados correctamente.")
 
 
 def eliminar_alumno(config):
-    cambiado = False
     legajo = seleccionar_alumno(config)
     if legajo is not None:
         print("El alumno dejará de aparecer en las búsquedas y sus notas quedarán fuera del uso normal.")
         if entrada.confirmar("¿Confirmás la baja de este alumno?"):
             gestion.eliminar_alumno(config, legajo)
-            cambiado = True
-    return cambiado
+            print("Cambios guardados correctamente.")
 
 
 def seleccionar_materia(config):
@@ -127,19 +112,19 @@ def seleccionar_materia(config):
             codigo = entrada.leer("Código de materia (0 o Enter para volver): ")
             if codigo in ("0", ""):
                 break
-            fila = archivos.buscar_en_archivo(archivo, 2, (0,), (codigo,))
+            fila = archivos.buscar_en_archivo(archivo, 2, (codigo,))
             if fila is not None:
                 elegido = codigo
                 break
             print("No existe una materia con ese código.")
-    finally:
-        if archivo is not None:
-            archivo.close()
+    except:
+        archivos.cerrar([archivo])
+        raise
+    archivos.cerrar([archivo])
     return elegido
 
 
 def inscribir_alumno(config):
-    cambiado = False
     legajo = seleccionar_alumno(config)
     if legajo is not None:
         materia = seleccionar_materia(config)
@@ -148,8 +133,7 @@ def inscribir_alumno(config):
             periodo = entrada.elegir(config["periodos"], "Elegí el período: ")
             if periodo is not None:
                 gestion.inscribir(config, legajo, materia, anio, config["periodos"][periodo])
-                cambiado = True
-    return cambiado
+                print("Cambios guardados correctamente.")
 
 
 def seleccionar_cursada(config, legajo):
@@ -163,7 +147,7 @@ def seleccionar_cursada(config, legajo):
         for linea in cursadas:
             fila = archivos.separar(linea, 7)
             if fila[0] == legajo:
-                materia = archivos.buscar_en_archivo(materias, 2, (0,), (fila[1],))
+                materia = archivos.buscar_en_archivo(materias, 2, (fila[1],))
                 if materia is None:
                     raise ValueError("Una inscripción hace referencia a una materia inexistente.")
                 cantidad += 1
@@ -183,18 +167,14 @@ def seleccionar_cursada(config, legajo):
                         if contador == numero:
                             seleccionada = fila
                             break
-    finally:
-        try:
-            if materias is not None:
-                materias.close()
-        finally:
-            if cursadas is not None:
-                cursadas.close()
+    except:
+        archivos.cerrar([materias, cursadas])
+        raise
+    archivos.cerrar([materias, cursadas])
     return seleccionada
 
 
 def quitar_materia(config):
-    cambiado = False
     legajo = seleccionar_alumno(config)
     if legajo is not None:
         fila = seleccionar_cursada(config, legajo)
@@ -203,12 +183,10 @@ def quitar_materia(config):
                 print("No se puede quitar una inscripción que ya tiene notas.")
             elif entrada.confirmar("¿Quitás esta inscripción?"):
                 gestion.quitar_inscripcion(config, legajo, fila[1], fila[2], fila[3])
-                cambiado = True
-    return cambiado
+                print("Cambios guardados correctamente.")
 
 
 def editar_nota(config, modificar=False):
-    cambiado = False
     legajo = seleccionar_alumno(config)
     if legajo is not None:
         fila = seleccionar_cursada(config, legajo)
@@ -237,8 +215,7 @@ def editar_nota(config, modificar=False):
                     nota = entrada.leer_nota()
                     gestion.registrar_nota(config, legajo, fila[1], fila[2], fila[3],
                                            disponibles[indice], nota, modificar)
-                    cambiado = True
-    return cambiado
+                    print("Cambios guardados correctamente.")
 
 
 def mostrar_notas_alumno(config):
@@ -258,7 +235,7 @@ def mostrar_notas_alumno(config):
                 fila = archivos.separar(linea, 7)
                 if fila[0] == legajo:
                     cantidad += 1
-                    materia = archivos.buscar_en_archivo(materias, 2, (0,), (fila[1],))
+                    materia = archivos.buscar_en_archivo(materias, 2, (fila[1],))
                     if materia is None:
                         raise ValueError("Una inscripción tiene una materia inexistente.")
                     print(f"\n{materia[1]} | {fila[2]} | {fila[3]}")
@@ -268,16 +245,12 @@ def mostrar_notas_alumno(config):
                     for evaluacion in config["evaluaciones"]:
                         if evaluacion in notas:
                             print("  " + evaluacion + ": " + gestion.formatear_nota(notas[evaluacion]))
-        finally:
-            try:
-                if materias is not None:
-                    materias.close()
-            finally:
-                if cursadas is not None:
-                    cursadas.close()
+        except:
+            archivos.cerrar([materias, cursadas])
+            raise
+        archivos.cerrar([materias, cursadas])
         if cantidad == 0:
             print("Sin materias asignadas. Usá la opción 8 para inscribir al alumno.")
-    return False
 
 
 def listar_alumnos(config):
@@ -290,39 +263,13 @@ def listar_alumnos(config):
             if ficha["activo"] == "1":
                 print(etiqueta_alumno(ficha))
                 cantidad += 1
-    finally:
-        if archivo is not None:
-            archivo.close()
+    except:
+        archivos.cerrar([archivo])
+        raise
+    archivos.cerrar([archivo])
     print(f"Total de alumnos activos: {cantidad}.")
-    return False
 
 
 def agregar_materia(config):
     codigo = gestion.alta_materia(config, entrada.leer("Nombre de la nueva materia: "))
     print(f"Materia creada con código {codigo}. Asignala desde la opción 8.")
-    return True
-
-
-def ejecutar_opcion(config, opcion):
-    cambiado = False
-    if opcion == 1:
-        cambiado = agregar_persona(config)
-    elif opcion == 2:
-        cambiado = editar_nota(config)
-    elif opcion == 3:
-        cambiado = editar_nota(config, modificar=True)
-    elif opcion == 4 or opcion == 7:
-        mostrar_notas_alumno(config)
-    elif opcion == 5:
-        cambiado = eliminar_alumno(config)
-    elif opcion == 6:
-        cambiado = modificar_persona(config)
-    elif opcion == 8:
-        cambiado = inscribir_alumno(config)
-    elif opcion == 9:
-        cambiado = quitar_materia(config)
-    elif opcion == 10:
-        cambiado = agregar_materia(config)
-    elif opcion == 11:
-        listar_alumnos(config)
-    return cambiado

@@ -1,18 +1,15 @@
 # Grupo 8 - Gestión de alumnos y notas
 
-Versión adaptada a las 12 presentaciones de Programación 1 entregadas por el
-grupo. Todos los archivos Python importan únicamente módulos propios.
-No hace falta instalar bibliotecas adicionales.
+Programa de consola para Programación 1. Usa solamente módulos propios.
+No requiere instalar bibliotecas adicionales.
 
-## Iniciar
+## Cómo abrirlo
 
-1. Descargá el proyecto completo y extraé el ZIP.
-2. En Windows, abrí **Iniciar.bat**.
-3. También podés abrir una terminal **en la carpeta del programa** y ejecutar
-   `python main.py` con Python 3.9 o posterior.
+1. Descargá el proyecto completo y descomprimí el ZIP.
+2. En Windows, abrí **Iniciar.bat**. Necesitás Python 3.9 o posterior.
+3. También podés ejecutar `python main.py` desde la carpeta del programa.
 
-El iniciador coloca la terminal en la carpeta correcta y busca Python instalado
-en el equipo o el que incluye Codex. El `.bat` necesita los demás archivos.
+El archivo BAT necesita los demás archivos del proyecto para funcionar.
 
 ## Menú
 
@@ -31,97 +28,74 @@ en el equipo o el que incluye Codex. El `.bat` necesita los demás archivos.
 | 11 | Listar alumnos |
 | 12 | Salir |
 
-## Demostración para el profesor
+## Datos de ejemplo
 
-El primer inicio crea **15 alumnos ficticios**, **11 materias** y **45
-inscripciones**: tres materias diferentes por alumno, dos en el primer
-cuatrimestre y una en el segundo. Las cursadas de ejemplo son del año **2026**.
-Las notas están vacías para cargarlas durante la presentación.
+En una carpeta nueva, el primer inicio crea 15 alumnos ficticios, 11 materias
+y 45 inscripciones del año 2026. Cada alumno tiene tres materias asignadas,
+repartidas entre los dos cuatrimestres. Las notas comienzan vacías.
 
-Alumnos: Matías López, Carlos Gómez, Daniela Fernández, Juan Pérez, Sofía
-Rodríguez, Lucía González, Pedro Martínez, Florencia Sánchez, Valentina Romero,
-Diego Díaz, Martina Álvarez, Alejandro Ruiz, Camila Alonso, Gabriel Torres y
-Julieta Silva. Los DNI de ejemplo van del 90000001 al 90000015 y los correos
-usan `example.com`.
+Para una demostración: listá los alumnos con la opción 11, buscá `matias`
+con la opción 2, ingresá su legajo `1`, elegí una cursada y cargá una nota.
+Después consultala con la opción 4 o corregila con la opción 3.
 
-Materias: Matemática, Literatura, Electrotecnia, Inglés, Física, Química,
-Historia, Geografía, Biología, Informática y Educación Física.
+## Reglas de uso
 
-Recorrido sugerido:
+- Cada alumno tiene legajo automático, nombre, apellido y DNI. Correo y
+  teléfono son opcionales. El DNI no puede repetirse entre alumnos activos.
+- La búsqueda admite nombre, apellido, DNI completo o `#legajo`, sin
+  distinguir mayúsculas ni tildes. Se elige escribiendo el legajo mostrado.
+  Si no hay coincidencias o el legajo no corresponde, vuelve al menú.
+- Cada inscripción relaciona un alumno, una materia, un año y un período:
+  primer cuatrimestre, segundo cuatrimestre o anual.
+- Cada cursada admite solamente **Parcial 1, Parcial 2 y Final**.
+  Las notas van de 1 a 10 y admiten coma o punto decimal.
+- Al modificar un alumno, Enter conserva el valor y un guion borra correo
+  o teléfono. `/cancelar` o Ctrl+C vuelve al menú durante una operación.
+- Eliminar un alumno requiere confirmación. Se marca como inactivo para
+  conservar su historial y evitar reutilizar su legajo; deja de aparecer
+  en las búsquedas y sus notas quedan fuera del uso normal.
+- Una inscripción con notas no puede quitarse.
 
-1. Opción **11**: ver el listado precargado.
-2. Opción **7**: buscar `matias`. Escribí **el legajo que aparece en el resultado**.
-3. Opción **2**: buscá al mismo alumno, seleccioná Matemática y cargá Parcial 1.
-4. Opción **4**: consultar las notas, impresas una por línea y sin corchetes.
-5. Opción **3**: corregir la nota; opción **6**: modificar los datos personales.
-6. Opción **12**: salir. Al abrir otra vez, los cambios siguen guardados.
+## Organización del código
 
-## Reglas
+| Archivo | Responsabilidad |
+| --- | --- |
+| `main.py` | Ciclo principal con `while` y opciones con `if/elif`. |
+| `Crear_Matriz.py` | Menú, búsquedas, entrada de fichas y presentación de notas. |
+| `Funciones_Reps.py` | Lectura y validación de opciones, notas y confirmaciones. |
+| `gestion.py` | Reglas de alumnos, materias, inscripciones y notas; ejemplos iniciales. |
+| `archivos.py` | Lectura, escritura y cierre de archivos de texto. |
 
-- El alumno tiene legajo automático, nombre, apellido, DNI, correo y teléfono.
-  Correo y teléfono son opcionales. Los nombres admiten espacios y tildes.
-- El DNI debe tener 7 u 8 dígitos; se aceptan puntos y espacios al ingresarlo.
-  No puede repetirse entre alumnos activos. Se permiten personas con el mismo
-  nombre si sus DNI son diferentes.
-- La búsqueda funciona por nombre, apellido, DNI completo o `#legajo`.
-  Ignora mayúsculas y tildes. Luego se ingresa el legajo del resultado elegido.
-- Cada alumno se inscribe en sus propias materias, con año y período.
-  El año se ingresa por teclado; no se consulta el reloj con `datetime`.
-- Por cursada se admite una nota de **Parcial 1**, una de **Parcial 2** y una de
-  **Final**. Las notas van de 1 a 10 y admiten decimales con coma o punto.
-  Las evaluaciones ya cargadas se corrigen mediante Modificar nota.
-- Se conservan períodos distintos: primer cuatrimestre, segundo cuatrimestre
-  y anual. El final se asocia a la cursada seleccionada.
-- Enter mantiene los datos al modificar una ficha. Un guion borra correo o
-  teléfono. `/cancelar` o Ctrl+C cancela la operación y vuelve al menú.
-- La eliminación requiere confirmación y se implementa como **baja lógica**:
-  el alumno desaparece de las búsquedas y sus inscripciones y notas quedan
-  fuera del uso normal. El registro se conserva en el archivo para no perder
-  historial ni reutilizar legajos. No se borran materias ni otros alumnos.
-- Solo se puede quitar una inscripción si no tiene notas.
+Se mantienen tuplas para las opciones y claves de cursadas, y diccionarios
+para las fichas y las notas. La explicación está en `CONTENIDOS_DEL_CURSO.md`.
 
-## Archivos y guardado
+## Guardado
 
-- `main.py`: inicio y ciclo principal.
-- `Crear_Matriz.py`: menú, búsquedas y pantallas. Se conserva el nombre original.
-- `Funciones_Reps.py`: entrada por teclado y validación de opciones.
-- `gestion.py`: validaciones, alumnos, materias, inscripciones y notas.
-- `archivos.py`: lectura y escritura secuencial de registros de texto.
-- `pruebas.py`: 52 comprobaciones con `assert` y módulos propios.
-- `CONTENIDOS_DEL_CURSO.md`: relación entre las presentaciones y el código.
+Los cambios se guardan automáticamente en `alumnos.txt`, `materias.txt`
+y `cursadas.txt`. Cada línea es un registro separado por punto y coma.
+Se procesan línea por línea; no se carga el archivo completo en una lista.
 
-Se generan automáticamente `alumnos.txt`, `materias.txt` y `cursadas.txt`.
-Cada línea contiene un registro y sus campos se separan con punto y coma.
-Los archivos se leen con `for linea in archivo`, se cierran en `finally` y
-**no se cargan completos en listas o diccionarios**. Las búsquedas conservan
-solo la ficha seleccionada. Cada diccionario de notas tiene como máximo tres
-elementos.
+Los archivos se cierran con `close()`, también si hay un error o se cancela.
+Al modificar datos se prepara un archivo `.nuevo` y se conserva la versión
+anterior en `.bak`. Si falla el reemplazo se intenta restaurar esa copia.
+Esto no garantiza recuperación automática ante un corte de energía.
 
-Al modificar datos se prepara una nueva versión línea por línea. Antes de
-reemplazar el archivo se conserva una copia `.bak`. Si falla el reemplazo,
-se intenta recuperar esa copia. Los archivos `.nuevo` son auxiliares.
-Este mecanismo no garantiza recuperación automática ante un corte de energía
-durante la escritura; la copia `.bak` permite recuperar la versión anterior.
+Esta versión conserva el formato de los tres archivos de texto anteriores.
+Para trasladar tus datos, copiá los tres juntos con el programa cerrado.
+Si falta solo uno, el programa avisa en lugar de mezclar datos con ejemplos.
+Si encuentra únicamente un antiguo `datos.json`, solicita su conversión.
 
-Los archivos de datos y sus copias se excluyen de GitHub y del ZIP. Para
-trasladar tus propios datos, copiá los **tres archivos `.txt` juntos**, con
-el programa cerrado. Los ejemplos solo se crean si faltan los tres archivos;
-si falta uno solo se informa el problema para evitar mezclar versiones.
+El ZIP y GitHub contienen el código y la documentación. Los datos personales,
+las copias y los archivos temporales se excluyen mediante `.gitignore`.
 
-### Datos de la versión anterior
+## Simplificación del 9 de octubre de 2026
 
-El nuevo programa no usa `json`. Si encuentra únicamente un `datos.json`
-anterior, avisa y lo conserva en lugar de comenzar con ejemplos. La conversión
-de ese archivo debe hacerse antes de usar esta versión; no se incluyó un
-importador JSON porque incumpliría la restricción de importaciones.
+Se retiró `pruebas.py`: su función `ejecutar()` creaba datos temporales
+para comprobar el programa y no formaba parte del uso normal.
+También se quitó `ejecutar_opcion()`; ahora las llamadas están directamente
+en `main.py`, como en el programa original.
 
-El ZIP y GitHub contienen solo el código: en una carpeta nueva se generan
-los 15 alumnos de demostración.
-
-## Pruebas
-
-Desde la carpeta del proyecto, ejecutá `python pruebas.py`.
-Se utilizan únicamente archivos llamados `prueba_alumnos.txt`,
-`prueba_materias.txt` y `prueba_cursadas.txt`, junto a sus auxiliares. Las pruebas
-recrean esos archivos en cada ejecución y no modifican los datos de uso normal.
-Verifican duplicados, búsquedas, edición, notas, períodos, bajas y persistencia.
+El código entregado no utiliza `assert` ni `finally`. Se simplificaron las
+búsquedas, las validaciones y los parámetros de las funciones de archivos.
+La verificación se realizó por separado: 52 comprobaciones de las reglas,
+recorridos del menú, persistencia, cancelación y cierre de archivos.
