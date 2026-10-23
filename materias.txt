@@ -1,0 +1,11 @@
+1;Matemática
+2;Literatura
+3;Electrotecnia
+4;Inglés
+5;Física
+6;Química
+7;Historia
+8;Geografía
+9;Biología
+10;Informática
+11;Educación Física

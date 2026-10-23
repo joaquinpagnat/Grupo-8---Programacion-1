@@ -1,143 +1,135 @@
-"""Lectura y escritura de archivos de texto, un registro por vez."""
-
-
-def cerrar(abiertos):
-    # Intenta cerrar todos los archivos, incluso si uno no puede cerrarse.
-    error = None
-    for archivo in abiertos:
-        if archivo is not None:
-            try:
-                archivo.close()
-            except OSError as problema:
-                error = problema
-    if error is not None:
-        raise error
-
-
 def existe(ruta):
+    """Verifica si un archivo de texto existe intentando abrirlo en modo lectura."""
     encontrado = True
     try:
-        archivo = open(ruta, "rt", encoding="utf-8")
-        archivo.close()
+        arch = open(ruta, "rt", encoding="UTF8")
     except FileNotFoundError:
         encontrado = False
+    finally:
+        try:
+            arch.close()
+        except NameError:
+            pass
     return encontrado
 
 
 def separar(linea, cantidad):
-    campos = linea.rstrip("\n\r").split(";")
-    if len(campos) != cantidad:
-        raise ValueError("Registro inválido: cantidad de campos incorrecta.")
+    """Separa los campos de un registro delimitado por punto y coma."""
+    campos = linea.rstrip("\n").split(";")
+    assert len(campos) == cantidad, "Registro inválido en el archivo."
     return campos
 
 
 def formar_linea(campos):
-    textos = []
-    for campo in campos:
-        texto = str(campo)
-        if ";" in texto or "\n" in texto or "\r" in texto:
-            raise ValueError("Los datos no pueden contener punto y coma ni saltos de línea.")
-        textos.append(texto)
+    """Arma una línea de texto separada por punto y coma a partir de una lista de campos."""
+    textos = [str(campo).replace(";", ",") for campo in campos]
     return ";".join(textos) + "\n"
 
 
-def buscar_en_archivo(archivo, cantidad, clave):
-    # La clave ocupa los primeros campos: el código o los 4 datos de la cursada.
-    archivo.seek(0)
+def obtener_clave(campos, posiciones):
+    """Extrae una tupla con los campos que identifican al registro."""
+    lista = [campos[pos] for pos in posiciones]
+    return tuple(lista)
+
+
+def buscar_en_archivo(arch, cantidad, posiciones, clave):
+    """Busca un registro por su clave leyendo línea por línea con readline."""
+    arch.seek(0)
     resultado = None
-    for linea in archivo:
+    linea = arch.readline()
+    while linea != "" and resultado is None:
         campos = separar(linea, cantidad)
-        if tuple(campos[:len(clave)]) == clave:
-            if resultado is not None:
-                raise ValueError("El archivo contiene un identificador duplicado.")
+        if obtener_clave(campos, posiciones) == clave:
             resultado = campos
+        linea = arch.readline()
     return resultado
 
 
-def buscar(ruta, cantidad, clave):
-    archivo = None
+def buscar(ruta, cantidad, posiciones, clave):
+    """Abre un archivo de texto y busca un registro según su clave."""
+    resultado = None
     try:
-        archivo = open(ruta, "rt", encoding="utf-8")
-        resultado = buscar_en_archivo(archivo, cantidad, clave)
-    except:
-        cerrar([archivo])
-        raise
-    cerrar([archivo])
+        arch = open(ruta, "rt", encoding="UTF8")
+        resultado = buscar_en_archivo(arch, cantidad, posiciones, clave)
+    finally:
+        try:
+            arch.close()
+        except NameError:
+            pass
     return resultado
 
 
 def siguiente_codigo(ruta, cantidad):
+    """Determina el próximo número de código secuencial en un archivo."""
     mayor = 0
-    archivo = None
     try:
-        archivo = open(ruta, "rt", encoding="utf-8")
-        for linea in archivo:
+        arch = open(ruta, "rt", encoding="UTF8")
+        for linea in arch:
             campos = separar(linea, cantidad)
-            mayor = max(mayor, int(campos[0]))
-    except:
-        cerrar([archivo])
-        raise
-    cerrar([archivo])
+            codigo = int(campos[0])
+            if codigo > mayor:
+                mayor = codigo
+    finally:
+        try:
+            arch.close()
+        except NameError:
+            pass
     return str(mayor + 1)
 
 
 def copiar(origen, destino):
-    entrada = None
-    salida = None
+    """Copia un archivo de texto en otro procesando un registro por vez."""
     try:
-        entrada = open(origen, "rt", encoding="utf-8")
-        salida = open(destino, "wt", encoding="utf-8")
+        entrada = open(origen, "rt", encoding="UTF8")
+        salida = open(destino, "wt", encoding="UTF8")
         for linea in entrada:
             salida.write(linea)
-    except:
-        cerrar([entrada, salida])
-        raise
-    cerrar([entrada, salida])
+    finally:
+        try:
+            entrada.close()
+            salida.close()
+        except NameError:
+            pass
 
 
-def guardar_registro(ruta, cantidad, clave, nuevo):
-    """Agrega o reemplaza un registro. Si nuevo es None, lo quita."""
-    entrada = None
-    salida = None
+def guardar_registro(ruta, cantidad, posiciones, clave, nuevo):
+    """Agrega, modifica o elimina un registro copiando hacia un archivo auxiliar."""
+    ruta_aux = ruta + ".tmp"
     encontrado = False
     try:
-        entrada = open(ruta, "rt", encoding="utf-8")
-        salida = open(ruta + ".nuevo", "wt", encoding="utf-8")
+        entrada = open(ruta, "rt", encoding="UTF8")
+        salida = open(ruta_aux, "wt", encoding="UTF8")
         for linea in entrada:
             campos = separar(linea, cantidad)
-            if tuple(campos[:len(clave)]) == clave:
-                if encontrado:
-                    raise ValueError("El archivo contiene un identificador duplicado.")
+            if obtener_clave(campos, posiciones) == clave:
                 encontrado = True
                 if nuevo is not None:
                     salida.write(formar_linea(nuevo))
             else:
                 salida.write(linea)
-        if not encontrado:
-            if nuevo is None:
-                raise ValueError("No existe el registro que se quiere quitar.")
-            salida.write(formar_linea(nuevo))
-    except:
-        cerrar([entrada, salida])
-        raise
-    cerrar([entrada, salida])
 
-    # Se conserva la versión anterior antes de reemplazar el archivo.
-    copiar(ruta, ruta + ".bak")
-    try:
-        copiar(ruta + ".nuevo", ruta)
-    except (OSError, KeyboardInterrupt):
-        copiar(ruta + ".bak", ruta)
-        raise
+        if not encontrado and nuevo is not None:
+            salida.write(formar_linea(nuevo))
+    finally:
+        try:
+            entrada.close()
+            salida.close()
+        except NameError:
+            pass
+
+    copiar(ruta_aux, ruta)
 
 
 def crear(ruta, registros):
-    archivo = None
+    """Graba los registros iniciales en un archivo de texto nuevo."""
     try:
-        archivo = open(ruta, "wt", encoding="utf-8")
+        arch = open(ruta, "wt", encoding="UTF8")
         for registro in registros:
-            archivo.write(formar_linea(registro))
-    except:
-        cerrar([archivo])
-        raise
-    cerrar([archivo])
+            arch.write(formar_linea(registro))
+    finally:
+        try:
+            arch.close()
+        except NameError:
+            pass
+
+

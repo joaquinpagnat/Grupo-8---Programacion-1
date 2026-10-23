@@ -1,0 +1,16 @@
+1;1;Matías;López;90000001;alumno1@example.com;
+2;1;Carlos;Gómez;90000002;alumno2@example.com;
+3;1;Daniela;Fernández;90000003;alumno3@example.com;
+4;1;Juan;Pérez;90000004;alumno4@example.com;
+5;1;Sofía;Rodríguez;90000005;alumno5@example.com;
+6;1;Lucía;González;90000006;alumno6@example.com;
+7;1;Pedro;Martínez;90000007;alumno7@example.com;
+8;1;Florencia;Sánchez;90000008;alumno8@example.com;
+9;1;Valentina;Romero;90000009;alumno9@example.com;
+10;1;Diego;Díaz;90000010;alumno10@example.com;
+11;1;Martina;Álvarez;90000011;alumno11@example.com;
+12;1;Alejandro;Ruiz;90000012;alumno12@example.com;
+13;1;Camila;Alonso;90000013;alumno13@example.com;
+14;1;Gabriel;Torres;90000014;alumno14@example.com;
+15;1;Julieta;Silva;90000015;alumno15@example.com;
+16;1;Jorge;Perez;47382093;;
